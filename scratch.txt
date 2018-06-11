@@ -1,0 +1,61 @@
+### self-signed certificate
+openssl genrsa -out /etc/pki/tls/private/vault.dv.net/host.key 2048
+openssl req -new -subj '/C=US/ST=Texas/O=DensonVentures/CN=vault.dv.net' -key /etc/pki/tls/private/vault.dv.net/host.key -out /etc/pki/tls/private/vault.dv.net/host.csr
+openssl x509 -in /etc/pki/tls/private/vault.dv.net/host.csr -out /etc/pki/tls/certs/vault.dv.net/host.crt -req -signkey /etc/pki/tls/private/vault.dv.net/host.key -days 30
+
+
+
+#!/bin/sh
+update-ca-trust enable
+cat /etc/pki/tls/ca/root.crt >> /etc/pki/ca-trust/source/anchors/ca.crt
+sudo update-ca-trust extract
+
+
+
+Unseal Key 1: TQWDmgh+c5wLyaDh4m6jk5zvNiS5NFzE+Tpy/WQJyMdH
+Unseal Key 2: g42rkDStt7I6zuIldUGBh1UfK+9gTJKEXfdbih87xYmZ
+Unseal Key 3: LS59KInkoQyyQ1Yz4Brv7HbdzB2RLTzhkW1oD0qH8O3l
+
+Initial Root Token: 6b333db2-a28b-8c5b-e3df-265babf4bc8c
+
+apollo::adminpassword
+wordsworth::userpassword
+
+
+db.artists.insertOne({ name: "Jacques-Louis David", born: '30 August 1748', died: '29 December 1825', movement: 'neoclassicism' });
+db.artists.insertOne({ name: "Paul Gauguin", born: '7 June 1848', died: '8 May 1903', movement: '	post-impressionism' });
+db.artists.insertOne({ name: "Edvard Munch", born: '12 December 1863', died: '23 January 1944', movement: 'neoclassicism' });
+
+db.artists.updateOne({ "_id" : ObjectId("5a7f596cf6fc35953b3f7120") }, { $set: { movement: "expressionism" } });
+
+# mongodb plugin config
+# config.vm.network needs to be "private_network"
+vault write database/config/mongoexample plugin_name=mongodb-database-plugin allowed_roles="reddb-reader" connection_url="mongodb://apollo:adminpassword@127.0.0.1:9228/admin"
+
+# user expiration didn't seem to work...
+vault write database/roles/reddb-reader db_name=redux creation_statements='{ "db": "red", "roles": [{ "role": "read" }] }' default_ttl="5m" max_ttl="30m"
+# works! statement above was missing the "revocation_statements"
+vault write database/roles/reddb-reader db_name=redux creation_statements='{ "db": "red", "roles": [{ "role": "read" }] }' revocation_statements='{ "db": "red" }' default_ttl="1m" max_ttl="5m"
+
+# gens on every read
+vault read database/creds/reddb-reader
+# initial user created
+password           A1a-trr40tvvwq62rpuq
+username           v-root-reddb-reader-5rtr45t44p3p2q998709-1518333093
+# second try
+password           A1a-yx185q0u9yy98y7q
+username           v-root-reddb-reader-6t2z6t41x896t1wx01vw-1518335371
+
+
+http://pki-tutorial.readthedocs.io/en/latest/advanced/
+
+
+from chrome history (04.16)
+https://docs.mongodb.com/manual/reference/configuration-options/#net-options
+https://www.vaultproject.io/docs/secrets/pki/index.html
+https://www.vaultproject.io/api/system/health.html
+google search: "openssl.cnf add SAN"
+  https://stackoverflow.com/questions/21488845/how-can-i-generate-a-self-signed-certificate-with-subjectaltname-using-openssl
+https://blog.kintoandar.com/2015/11/vault-PKI-made-easy.html
+google search: "vault Error reading pki/ca/pem: invalid character '-' in numeric literal"
+  https://github.com/hashicorp/vault/issues/919

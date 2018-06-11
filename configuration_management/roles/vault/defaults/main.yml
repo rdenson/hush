@@ -1,0 +1,5 @@
+---
+host_ip: "{{ ansible_eth1.ipv4.address }}"
+vault_conf: /opt/vault/vault-config.hcl
+vault_install_directory: /opt/vault
+vault_storage_directory: /opt/vaultStorage

@@ -1,0 +1,20 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+CONFIG_VER = 2
+Vagrant.configure(CONFIG_VER) do |config|
+  config.vm.box = "centos/7"
+  config.vm.hostname = "rootops.dv.net"
+  config.vm.network "private_network", ip: "192.168.7.2"
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "root1"
+    vb.memory = 1024
+    vb.cpus = 1
+  end
+
+  config.vm.synced_folder "data", "/sdata"
+  config.vm.provision "shell", path: "provision/base.sh"
+  #config.vm.provision "shell", path: "provision/selfsignedCA.sh"
+  #config.vm.provision "shell", path: "provision/vaultsetup.sh"
+  #config.vm.provision "shell", path: "provision/mongodb.sh"
+end

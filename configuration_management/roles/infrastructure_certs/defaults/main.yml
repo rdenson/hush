@@ -1,0 +1,21 @@
+---
+ca_conf: /etc/pki/tls/instaCA.conf
+openssl_conf: /etc/pki/tls/openssl_alt.cnf
+tls_base_directory: /etc/pki/tls
+
+# ca directories (assumes {{tls_base_directory}} )
+ca_dirs:
+  - /ca
+  - /private/ca
+
+# ca configuration file
+cert_purpose: serverAuth
+default_duration: 365
+use_cert_extensions: "copy_extensions = copy"
+
+host_ip: "{{ ansible_eth1.ipv4.address }}"
+
+# host cert directories
+cert_dirs:
+  - /certs/host
+  - /private/host

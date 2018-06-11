@@ -1,0 +1,38 @@
+---
+# pre-installation setup
+- name: make vault directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ vault_install_directory }}"
+    - "{{ vault_storage_directory }}"
+- name: place vault configuration file
+  template:
+    src: vault-config.hcl.j2
+    dest: "{{ vault_install_directory }}/vault-config.hcl"
+- name: place vault service unit file
+  template:
+    src: vault.service.j2
+    dest: /etc/systemd/system/vault.service
+
+# download and install vault
+- name: download vault archive
+  get_url:
+    url: https://releases.hashicorp.com/vault/0.9.3/vault_0.9.3_linux_amd64.zip
+    dest: "{{ vault_install_directory }}/"
+#- command: unzip -q {{ vault_install_directory }}/vault_0.9.3_linux_amd64.zip
+- unarchive:
+    src: "{{ vault_install_directory }}/vault_0.9.3_linux_amd64.zip"
+    dest: "{{ vault_install_directory }}"
+    remote_src: yes
+- name: start vault
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    name: vault.service
+    state: started
+
+# cli convenience
+- name: add vault to vagrant user's path
+  shell: sed -i '/^PATH=/ s/$/:\/opt\/vault/' /home/vagrant/.bash_profile

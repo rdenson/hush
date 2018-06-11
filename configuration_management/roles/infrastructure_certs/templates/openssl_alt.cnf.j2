@@ -1,0 +1,25 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+
+[req_distinguished_name]
+countryName = Country Name (2 letter code)
+countryName_default = US
+stateOrProvinceName = State or Province Name (full name)
+stateOrProvinceName_default = Texas
+localityName = Locality Name (eg, city)
+localityName_default = Austin
+organizationalUnitName	= Organizational Unit Name (eg, section)
+organizationalUnitName_default	= DensonVentures
+#commonName = Research and Development
+commonName_max	= 64
+
+[ v3_req ]
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+extendedKeyUsage = clientAuth,serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+IP.1 = 127.0.0.1
+IP.2 = {{ host_ip }}

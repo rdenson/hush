@@ -1,0 +1,17 @@
+{
+  "name": "service-app",
+  "version": "1.0.0",
+  "description": "application to demo cryptography as a service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "rdenson",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.2",
+    "mongoose": "^5.0.4",
+    "q": "^1.5.1"
+  }
+}

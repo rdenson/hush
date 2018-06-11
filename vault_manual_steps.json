@@ -1,0 +1,101 @@
+vault operator init -key-shares -key-threshold
+PUT	/v1/sys/init
+{
+  "secret_shares": 0,
+  "secret_threshold": 0
+}
+{
+  "keys": ["one", "two", "three"],
+  "keys_base64": ["cR9No5cBC", "F3VLrkOo", "zIDSZNGv"],
+  "root_token": "foo"
+}
+
+vault secrets enable pki
+POST	/sys/mounts/:path
+{
+  "type": "pki"
+}
+204
+
+
+POST /v1/pki/root/generate/internal
+{
+  "common_name": "vault-ca",
+  "organization": "DensonVentures",
+  "ou": "Research and Development",
+  "country": "US",
+  "province": "Texas",
+  "locality": "Austin"
+}
+{"common_name": "vault-ca","organization": "DensonVentures","ou": "Research and Development","country": "US","province": "Texas","locality": "Austin"}
+{
+  "request_id": "37d5a6ab-77f6-d885-cc7a-efd7afb6a568",
+  "lease_id": "",
+  "renewable": false,
+  "lease_duration": 0,
+  "data": {
+    "certificate": "-----BEGIN CERTIFICATE-----\nMIIDLDCCAhSgAwIBAgIUdKm5YS7vF214rGDPXTcFq9cedBowDQYJKoZIhvcNAQEL\nBQAwEzERMA8GA1UEAxMIdmF1bHQtY2EwHhcNMTgwNDI2MDQxMDIwWhcNMTgwNTI4\nMDQxMDUwWjATMREwDwYDVQQDEwh2YXVsdC1jYTCCASIwDQYJKoZIhvcNAQEBBQAD\nggEPADCCAQoCggEBANqAAeX3//KgmYmKLm+wFHXsQdWfLTk5Q+P8zMzG9/a8laiy\npR1a7x698b4Sp319v+mN994v0mbnqdCUen7zCX0amMvycS6G6NFa6NX3tl5Sokp3\neNOQQFbIulTdUxTf9eId9roZKntdwlfbOsXP8yjVXWLDU1QPiu8QBefc1G2kkZoK\nCWfPmd10T9ZXmjwQavV/zW9+gMgq9OYvcYGWY3YQwD+eEbhWmpeNH/vf4xxbDjRk\nM6eEBSk1bi4hGhgKZfep+n2QD3IAbITqi1XvCm/LXC+wW0qJc/zWV7jngnzKd4oN\nvI4NYbLN1eCCBoV0rP5sr1msrMkmnnuWfQOlZXkCAwEAAaN4MHYwDgYDVR0PAQH/\nBAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFN3aYIbzsmXEQPrOVsPo\naQygsqujMB8GA1UdIwQYMBaAFN3aYIbzsmXEQPrOVsPoaQygsqujMBMGA1UdEQQM\nMAqCCHZhdWx0LWNhMA0GCSqGSIb3DQEBCwUAA4IBAQC2s8OALUBNSCJiXgx41aPf\nnIhG0j9ClA+hFJvD9axPVKdXxW2Xqk5Xvo3JITy6CvQM9pZ1E8pBtH5CiAWRY+W4\nwi15GEdUgu77H1a87WD6sFYoyW5t3yQZ7bJe3BsMxjvXJrE93vSwFrP97tpaNVwb\nWV4YzeZsgkVhif0wziKN6v/hn1k/xEX8EgtHq1oz01vpo87yrAdtcAL00KCSdtO/\n0DEVVhqRvZGEWR5tpADXxfTpHBeiiox2Ynx/jhvZWflcV+0jUAy96u/Nc3shAPgq\nLablYikWA4HmyLr1wjDDZvBhHwaC9iOEUJclBwCWTrpBIozFkw+x8m6oLQdGiND+\n-----END CERTIFICATE-----",
+    "expiration": 1527480650,
+    "issuing_ca": "-----BEGIN CERTIFICATE-----\nMIIDLDCCAhSgAwIBAgIUdKm5YS7vF214rGDPXTcFq9cedBowDQYJKoZIhvcNAQEL\nBQAwEzERMA8GA1UEAxMIdmF1bHQtY2EwHhcNMTgwNDI2MDQxMDIwWhcNMTgwNTI4\nMDQxMDUwWjATMREwDwYDVQQDEwh2YXVsdC1jYTCCASIwDQYJKoZIhvcNAQEBBQAD\nggEPADCCAQoCggEBANqAAeX3//KgmYmKLm+wFHXsQdWfLTk5Q+P8zMzG9/a8laiy\npR1a7x698b4Sp319v+mN994v0mbnqdCUen7zCX0amMvycS6G6NFa6NX3tl5Sokp3\neNOQQFbIulTdUxTf9eId9roZKntdwlfbOsXP8yjVXWLDU1QPiu8QBefc1G2kkZoK\nCWfPmd10T9ZXmjwQavV/zW9+gMgq9OYvcYGWY3YQwD+eEbhWmpeNH/vf4xxbDjRk\nM6eEBSk1bi4hGhgKZfep+n2QD3IAbITqi1XvCm/LXC+wW0qJc/zWV7jngnzKd4oN\nvI4NYbLN1eCCBoV0rP5sr1msrMkmnnuWfQOlZXkCAwEAAaN4MHYwDgYDVR0PAQH/\nBAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFN3aYIbzsmXEQPrOVsPo\naQygsqujMB8GA1UdIwQYMBaAFN3aYIbzsmXEQPrOVsPoaQygsqujMBMGA1UdEQQM\nMAqCCHZhdWx0LWNhMA0GCSqGSIb3DQEBCwUAA4IBAQC2s8OALUBNSCJiXgx41aPf\nnIhG0j9ClA+hFJvD9axPVKdXxW2Xqk5Xvo3JITy6CvQM9pZ1E8pBtH5CiAWRY+W4\nwi15GEdUgu77H1a87WD6sFYoyW5t3yQZ7bJe3BsMxjvXJrE93vSwFrP97tpaNVwb\nWV4YzeZsgkVhif0wziKN6v/hn1k/xEX8EgtHq1oz01vpo87yrAdtcAL00KCSdtO/\n0DEVVhqRvZGEWR5tpADXxfTpHBeiiox2Ynx/jhvZWflcV+0jUAy96u/Nc3shAPgq\nLablYikWA4HmyLr1wjDDZvBhHwaC9iOEUJclBwCWTrpBIozFkw+x8m6oLQdGiND+\n-----END CERTIFICATE-----",
+    "serial_number": "74:a9:b9:61:2e:ef:17:6d:78:ac:60:cf:5d:37:05:ab:d7:1e:74:1a"
+  },
+  "wrap_info": null,
+  "warnings": null,
+  "auth": null
+}
+
+*** everything below must be a separate mount ***
+vault secrets enable -path=MOUNT_PATH pki
+replace "pki" with "MOUNT_PATH"
+vault allows only one ca per mount
+*************************************************
+
+POST /v1/pki/intermediate/generate/internal
+{
+  "common_name": "vault-intermediate-ca",
+  "organization": "DensonVentures",
+  "ou": "Research and Development",
+  "country": "US",
+  "province": "Texas",
+  "locality": "Austin"
+}
+{"common_name": "vault-intermediate-ca","organization": "DensonVentures","ou": "Research and Development","country": "US","province": "Texas","locality": "Austin"}
+{
+  "request_id": "52219225-dd72-8d9f-d9d9-00cec4802c7d",
+  "lease_id": "",
+  "renewable": false,
+  "lease_duration": 0,
+  "data": {
+    "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIICmDCCAYACAQAwIDEeMBwGA1UEAxMVdmF1bHQtaW50ZXJtZWRpYXRlLWNhMIIB\nIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqxqB3RzSbfQ/zA/BHbiXnJjz\n+kEjEAQ6GqDLN1aoY7YPESJ7VkIDTaPm3RERZ6kWzbDTnGITaR/dJxm3boJI8XC/\naJdOyHdAaYj5iEobSLHipv7AVgQ9abXRNuIHNvs92NxjkneL3hSQwweNEocDtXMy\nFPt3YpiXx6xj6kb0RCrZWufSnsMEQVpG00FprG2CO9MemQqEdkfPZJKVOtge0zix\nNaDQuHeu+6qfXjntAUTWEy4DFmNbn+Z1GT1ggZziDEMrAkT97G80IHGFY3PKNNhZ\nZaEYV/er5kcdot8H2IvRU7m6QXcn089KeCNsY8yhPZdFek82g6poeN4FeBeyVwID\nAQABoDMwMQYJKoZIhvcNAQkOMSQwIjAgBgNVHREEGTAXghV2YXVsdC1pbnRlcm1l\nZGlhdGUtY2EwDQYJKoZIhvcNAQELBQADggEBAEj21LVMr8MllMjLO46ngTbM/AfO\nG1kW8RuEoRLfdcb0aUgspXnn8dk2YFKJ7Wc9KagzGAgm2J4cLA/+LATdDTqQleZk\nA/GpoKGogilS5Hzgn1zXomQMb1L1mpzzhBgKCLcNco8T/LaSDdDQr0KH6qU2FCzf\n+er38I3cZF1mSsI3gv8U1liFVquVq46gxW4+EzmoZ8XQSb/mqhI7/FmGraBiLF2X\nV5D2mi4421snhqWoWnOkPU8SPNZEIdGJCX6nvahg2FP5k3xf14SU2X00CdT4ScJK\n2LyQ7rTVDEs79k9KVyeS2W16fHfTQr5XmkQED1hGGwhk2X710LpL2Z32wQU=\n-----END CERTIFICATE REQUEST-----"
+  },
+  "wrap_info": null,
+  "warnings": null,
+  "auth": null
+}
+
+
+POST /v1/pki/root/sign-intermediate
+{
+  "csr": "",
+  "common_name": "vault-intermediate-ca",
+  "format": "pem_bundle",
+  "use_csr_values": true
+}
+{
+  "lease_id": "",
+  "renewable": false,
+  "lease_duration": 0,
+  "data": {
+    "certificate": "-----BEGIN CERTIFICATE-----\nMIIDzDCCAragAwIBAgIUOd0ukLcjH43TfTHFG9qE0FtlMVgwCwYJKoZIhvcNAQEL\n...\numkqeYeO30g1uYvDuWLXVA==\n-----END CERTIFICATE-----\n",
+    "issuing_ca": "-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n",
+    "ca_chain": ["-----BEGIN CERTIFICATE-----\nMIIDUTCCAjmgAwIBAgIJAKM+z4MSfw2mMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV\n...\nG/7g4koczXLoUM3OQXd5Aq2cs4SS1vODrYmgbioFsQ3eDHd1fg==\n-----END CERTIFICATE-----\n"],
+    "serial": "39:dd:2e:90:b7:23:1f:8d:d3:7d:31:c5:1b:da:84:d0:5b:65:31:58"
+  },
+  "auth": null
+}
+
+
+POST /v1/pki/intermediate/set-signed
+{
+  "certificate": ""
+}

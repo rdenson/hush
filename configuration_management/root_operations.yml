@@ -1,0 +1,32 @@
+---
+- name: establish certificate authority
+  hosts: rootops
+  become: yes
+  vars:
+    - application_name: vault
+    - common_name: vault.dv.net
+    - generate_ca: true
+  roles:
+    - infrastructure_certs
+  tags:
+    - pki
+
+- name: stand-up vault server
+  hosts: rootops
+  become: yes
+  roles:
+    - vault
+  tags:
+    - secrets_store
+
+- name: cut cert for vault interface app
+  hosts: rootops
+  become: yes
+  vars:
+    - application_name: symbiot
+    - common_name: a000755s-mbp.debixatx.local
+    - generate_ca: false
+  roles:
+    - infrastructure_certs
+  tags:
+    - companion_app

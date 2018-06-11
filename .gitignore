@@ -1,0 +1,14 @@
+.git/
+configuration_management/ani_ssh/
+database/.vagrant/
+rootops/.vagrant/
+rootops/data/elastic/symbiot/
+service-app/node_modules/
+vault_interface/node_modules/
+vault_interface/tls/
+
+# individual excludes
+.DS_Store
+rootops/.DS_Store
+service-app/package-lock.json
+vault_interface/package-lock.json

@@ -1,0 +1,6 @@
+---
+- include: selfsigned_ca.yml
+  when:
+    - generate_ca is defined
+    - generate_ca
+- include: server_app.yml

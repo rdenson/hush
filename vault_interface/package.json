@@ -1,0 +1,18 @@
+{
+  "name": "symbiot",
+  "version": "1.0.0",
+  "description": "an interface to vault and other root operations",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "rdenson",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.16.3",
+    "extend": "^3.0.1",
+    "helmet": "^3.12.0",
+    "q": "^1.5.1",
+    "uuid": "^3.2.1"
+  }
+}

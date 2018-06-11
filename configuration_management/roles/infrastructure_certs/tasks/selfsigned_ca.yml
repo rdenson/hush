@@ -1,0 +1,40 @@
+---
+# filesystem setup
+- name: install ca config
+  template:
+    src: instaCA.conf.j2
+    dest: "{{ tls_base_directory }}/instaCA.conf"
+- name: make ca directories
+  file:
+    path: "{{ tls_base_directory }}/{{ item }}"
+    state: directory
+  with_items: "{{ ca_dirs }}"
+
+# ready ca database and serial files
+- name: create ca's current index
+  shell: echo 000a >> {{ tls_base_directory }}/ca/serialfile
+- name: create ca's database file
+  file:
+    path: "{{ tls_base_directory }}/ca/certindex"
+    state: touch
+
+# create root cert
+- name: root cert signing key
+  shell: >
+    openssl genrsa
+    -out {{ tls_base_directory }}/private/ca/signing.key
+    2048
+- name: self-sign our ca
+  shell: >
+    openssl req
+    -x509
+    -subj '/C=US/ST=Texas/O=DensonVentures/CN=root-ca'
+    -days 365
+    -key {{ tls_base_directory }}/private/ca/signing.key
+    -out {{ tls_base_directory }}/ca/root-ca.crt
+
+# make host trust our ca
+- command: update-ca-trust enable
+- name: copy ca to anchors directory
+  command: cp {{ tls_base_directory }}/ca/root-ca.crt /etc/pki/ca-trust/source/anchors/dvca.crt
+- command: update-ca-trust extract

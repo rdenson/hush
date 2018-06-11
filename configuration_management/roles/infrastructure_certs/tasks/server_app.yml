@@ -1,0 +1,36 @@
+---
+# filesystem setup
+- name: install openssl config
+  template:
+    src: openssl_alt.cnf.j2
+    dest: "{{ tls_base_directory }}/openssl_alt.cnf"
+- name: make host cert directories
+  file:
+    path: "{{ tls_base_directory }}/{{ item }}"
+    state: directory
+  with_items: "{{ cert_dirs }}"
+
+# create server app csr
+- name: "{{ application_name }} cert key"
+  shell: >
+    openssl genrsa
+    -out {{ tls_base_directory }}/private/host/{{ application_name }}-cert.key
+    2048
+- name: "{{ application_name }} csr"
+  shell: >
+    openssl req
+    -new
+    -config {{ openssl_conf }}
+    -subj '/C=US/ST=Texas/O=DensonVentures/CN={{ common_name }}'
+    -key {{ tls_base_directory }}/private/host/{{ application_name }}-cert.key
+    -out {{ tls_base_directory }}/private/host/{{ application_name }}.csr
+
+# issue server app cert
+- name: "{{ application_name }} certificate"
+  shell: >
+    openssl ca
+    -batch
+    -config {{ ca_conf }}
+    -notext
+    -in {{ tls_base_directory }}/private/host/{{ application_name }}.csr
+    -out {{ tls_base_directory }}/certs/host/{{ application_name }}.crt

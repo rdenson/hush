@@ -1,0 +1,15 @@
+listener "tcp" {
+  address = "{{ host_ip }}:8200"
+  tls_cert_file = "/etc/pki/tls/certs/host/vault.crt"
+  tls_key_file = "/etc/pki/tls/private/host/vault-cert.key"
+}
+
+listener "tcp" {
+  address = "127.0.0.1:8200"
+  tls_cert_file = "/etc/pki/tls/certs/host/vault.crt"
+  tls_key_file = "/etc/pki/tls/private/host/vault-cert.key"
+}
+
+storage "file" {
+  path = "{{ vault_storage_directory }}"
+}

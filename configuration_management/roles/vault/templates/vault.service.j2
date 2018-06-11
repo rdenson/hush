@@ -1,0 +1,14 @@
+[Unit]
+Description=hashicorp's vault (secrets management)
+
+[Service]
+ExecStart={{ vault_install_directory }}/vault server -config={{ vault_conf }} audit-enable syslog
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=vault-server
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
