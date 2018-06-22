@@ -25,6 +25,11 @@ function VaultOps(expressServer){
 
         return secrets.keys[keyid];
       },
+      _getResourcePathSafe = function(pathExtension) {
+        var resourcePath = DEFAULT_VAULT_REQUEST_OPTIONS.path;
+
+        return resourcePath + pathExtension;
+      },
       _reqFail = function(rejection, deferredObject) {
         expressServer.get('log').warn('request ' + rejection.id + ', failed... ' + rejection.message);
         if( typeof rejection.error === 'object' ){
@@ -57,7 +62,9 @@ function VaultOps(expressServer){
         vaultRequestPromises = [];
 
     //check to see if vault is sealed
-    requestOptions.path += '/sys/seal-status';
+    requestOptions.path = _getResourcePathSafe('/sys/seal-status');
+
+    //GET /v1/sys/seal-status
     intreq.secure(requestOptions).then(function(vaultResponse) {
       expressServer.get('log').info('vault is currently ' + (vaultResponse.content.sealed ? 'sealed' : 'unsealed'));
       if( vaultResponse.content.sealed ){
@@ -109,7 +116,9 @@ function VaultOps(expressServer){
         },
         requestOptions = that.getVaultRequestOpts();
 
-    requestOptions.path += '/sys/init';
+    requestOptions.path = _getResourcePathSafe('/sys/init');
+
+    //GET /v1/sys/init
     //check vault initialization status
     intreq.secure(requestOptions).then(
       function(vaultResponse) {
@@ -117,22 +126,24 @@ function VaultOps(expressServer){
         if( vaultResponse.httpStatus == 200 && !vaultResponse.content.initialized ){
           expressServer.get('log').info('vault was found to be un-initialized... beginning setup');
           expressServer.get('log').debug('initializing vault with 3 keys');
-
           requestOptions.method = 'POST';
+
+          //POST /v1/sys/init
           //call vault's init
           intreq.secure(requestOptions, JSON.stringify(initOpts)).then(
             function(vaultResponse) {
               //get keys and root token, write to file
               fs.writeFileSync(VAULT_SECRETS_FILE, JSON.stringify(vaultResponse.content));
               //set for later...
-              rootToken = vaultResponse.content.root_token;
-              initDO.resolve();
+              //rootToken = vaultResponse.content.root_token;
+              //let's give vault a moment after calling init; probably need a retry strategy here
+              setTimeout(function() { initDO.resolve(true); }, 15000);
             },
             function(rejection) { _reqFail(rejection, initDO); }
           );
         } else {
-          //we're already initialized; reject: vault init not performed
-          initDO.reject();
+          //we're already initialized; note as such
+          initDO.resolve(false);
         }
       },
       function(rejection) { _reqFail(rejection, initDO); }
@@ -165,6 +176,9 @@ function VaultOps(expressServer){
         },
         intermediateCsrDO = kq.defer(),
         requestOptions = that.getVaultRequestOpts(),
+        setSignedContent = {
+          "certificate": ""
+        },
         signCsrContent = {
           "csr": "",
           "common_name": "vault-intermediate-ca",
@@ -173,21 +187,30 @@ function VaultOps(expressServer){
         };
 
     expressServer.get('log').info('setting up certificate infrastructure');
-    //use our credentials for API operation
+    if( requestOptions.headers == null ){
+      requestOptions.headers = {};
+    }
+
+    //--- CERTIFICATE AUTHORITY ---//
+    //use our credentials for subsequent API operations
     requestOptions.headers['X-Vault-Token'] = _getToken();
     requestOptions.method = 'POST';
-    requestOptions.path += '/sys/mounts';
+    requestOptions.path = _getResourcePathSafe('/sys/mounts/pki');
+
+    //POST /v1/sys/mounts/pki
+    //vault enable PKI
     intreq.secure(requestOptions, '{"type": "pki"}').then(
       function(vaultResponse) {
         if( vaultResponse.httpStatus == 204 ){
           expressServer.get('log').info('creating certificate authority...');
-
-          //generate ca
           requestOptions.method = 'POST';
-          requestOptions.path += '/pki/root/generate/internal';
+          requestOptions.path = _getResourcePathSafe('/pki/root/generate/internal');
+
+          //POST /v1/pki/root/generate/internal
+          //generate root ca
           intreq.secure(requestOptions, JSON.stringify(caContent)).then(
             function(vaultResponse) {
-              caCert = vaultResponse.content.data.certificate;
+              //vaultResponse.content.data.certificate;
               expressServer.get('log').info('ca generated');
               certificateAuthorityDO.resolve();
             },
@@ -200,15 +223,22 @@ function VaultOps(expressServer){
       function(rejection) { _reqFail(rejection, certificateAuthorityDO); }
     );
 
+    //--- INTERMEDIATE CERTIFICATE AUTHORITY ---//
     certificateAuthorityDO.promise.then(
       function() {
         expressServer.get('log').info('creating intermediate ca...');
         requestOptions.method = 'POST';
-        requestOptions.path += '/sys/mounts/intermediate-pki';
+        requestOptions.path = _getResourcePathSafe('/sys/mounts/intermediate-pki');
+
+        //POST /v1/sys/mounts/intermediate-pki
+        //vault enable PKI for a DIFFERENT mount -> [[intermediate-pki]]
         intreq.secure(requestOptions, '{"type": "pki"}').then(
           function(vaultResponse) {
             requestOptions.method = 'POST';
-            requestOptions.path += '/intermediate-pki/intermediate/generate/internal';
+            requestOptions.path = _getResourcePathSafe('/intermediate-pki/intermediate/generate/internal');
+
+            //POST /v1/intermediate-pki/intermediate/generate/internal
+            //generate intermediate ca
             intreq.secure(requestOptions, JSON.stringify(intermediateContent)).then(
               function(vaultResponse) {
                 signCsrContent.csr = vaultResponse.content.data.csr;
@@ -225,21 +255,31 @@ function VaultOps(expressServer){
     );
 
 
+    //--- INSTALL INTERMEDIATE CA ---//
     intermediateCsrDO.promise.then(
       function() {
         requestOptions.method = 'POST';
-        requestOptions.path += '/intermediate-pki/pki/root/sign-intermediate';
+        requestOptions.path = _getResourcePathSafe('/pki/root/sign-intermediate');
+
+        //POST /v1/pki/root/sign-intermediate
+        //sign our recently generated intermediate csr with our ca
         intreq.secure(requestOptions, JSON.stringify(signCsrContent)).then(
           function(vaultResponse) {
-            intermediateCert = vaultResponse.content.data.certificate;
-            certificateChain = vaultResponse.content.data.ca_chain;
-
+            setSignedContent.certificate = vaultResponse.content.data.certificate;
+            //vaultResponse.content.data.ca_chain;
             requestOptions.method = 'POST';
-            requestOptions.path += '/intermediate-pki/intermediate/set-signed';
-            intreq.secure(requestOptions, '{"certificate": "' + intermediateCert + '"}').then(
+            requestOptions.path = _getResourcePathSafe('/intermediate-pki/intermediate/set-signed');
+
+            //POST /v1/intermediate-pki/intermediate/set-signed
+            //tell vault which ca to use for this mount; in this case our intermediate ca
+            //this allows us to re-issue an intermediate incase it becomes compromised
+            intreq.secure(requestOptions, JSON.stringify(setSignedContent)).then(
               function(vaultResponse) {
                 if( vaultResponse.httpStatus == 204 ){
                   generalSetupDO.resolve();
+                } else {
+                  console.log(vaultResponse);
+                  generalSetupDO.reject();
                 }
               },
               function(rejection) { _reqFail(rejection, generalSetupDO); }

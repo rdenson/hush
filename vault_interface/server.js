@@ -3,6 +3,7 @@ var body_parser = require('body-parser'),
     fs = require('fs'),
     https = require('https'),
     //helmet = require('helmet'),
+    kq = require('q'),
     router = require('./router'),
     simpleLog = require('./lib/simple-log'),
     vaultops = require('./lib/vault-ops')
@@ -23,33 +24,49 @@ symbiot.use(body_parser.urlencoded({ extended: true }));
 symbiot.get('log').info('starting up...' + symbiot.get('tagline'));
 
 //server start
-//symbiot.listen(8000);
 https.createServer(serverOptions, symbiot).listen(8080, function() {
-  var vo = new vaultops(symbiot);
+  var ready = kq.defer(),
+      vo = new vaultops(symbiot);
 
   symbiot.get('log').info('started; listening at 8080');
-  router.handleRequests(symbiot);
+  symbiot.get('log').info('checking vault\'s initialization status...');
 
   vo.initialize().then(
-    //initialzation logic
-    function() {
-      symbiot.get('log').info('initialized vault!');
-      //vo.setupCertificateInfrastructure();
+    //checks were successful
+    function(weNeededToInitialize) {
+      //no matter the outcome of the initialization checks, we need to un-seal the vault
+      vo.openVault().then(function() {
+        if( weNeededToInitialize ){
+          symbiot.get('log').info('initialized vault!');
+          //initialization also includes PKI - certificates
+          vo.setupCertificateInfrastructure().then(function() {
+            symbiot.get('log').info('finished setting up certificate infrastructure');
+            ready.resolve();
+          });
+        } else {
+          symbiot.get('log').info('vault seems to be initialized already');
+          ready.resolve();
+        }
+      });
     },
-    //...
-    function(info) {
-      //something to report?
-      if( info != null ){
-        //we ran into an issue
-        symbiot.get('log').error(info.message);
-        symbiot.get('log').error('fault description: ' + info.error);
+    //vault may not be accessible... these should be request failures
+    function(failureInfo) {
+      ready.reject();
+      //handle the returned data from a rejection
+      if( failureInfo != null ){
+        symbiot.get('log').error(failureInfo.message);
+        symbiot.get('log').error('fault description: ' + failureInfo.error);
       } else {
-        //check for sealed status and unseal if necessary
-        symbiot.get('log').info('vault seems to be initialized already');
-        vo.openVault().then(function() {
-          vo.setupCertificateInfrastructure();
-        });
+        symbiot.get('log').error('error could not be determined, check ./lib/vault-ops.js -> initialize()');
       }
+
+      //if we're having trouble talking to vault, then this app will not be operational
+      process.exit(1);
     }
   );
+
+  ready.promise.then(function() {
+    router.handleRequests(symbiot);
+    symbiot.get('log').info('application is ready');
+  });
 });

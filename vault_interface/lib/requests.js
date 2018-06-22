@@ -41,7 +41,7 @@ function secRequest(opts, payload) {
     });
     httpsResponse.on('end', function() {
       responseDO.resolve({
-        content: JSON.parse(content),
+        content: content != null && content.length > 0 ? JSON.parse(content) : '',
         headers: httpsResponse.headers,
         httpStatus: httpsResponse.statusCode,
         id: requestId,
